@@ -8,25 +8,40 @@ data = {"meals": ("breakfast", "brunch", "lunch", "supper"),
         "measures": ("ml", "g", "l", "cup", "tbsp", "tsp", "dsp", "")}
 
 def create_stage1(conn, data):
-    conn.execute("CREATE TABLE IF NOT EXISTS meals("
-                "meal_id INT PRIMARY KEY,"
-                "meal_name TEXT UNIQUE NOT NULL);")
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS meals(
+            meal_id INTEGER PRIMARY KEY,
+            meal_name TEXT UNIQUE NOT NULL
+        );
+    """)
 
-    conn.execute("CREATE TABLE IF NOT EXISTS ingredients("
-                "ingredient_id INT PRIMARY KEY,"
-                "ingredient_name TEXT UNIQUE NOT NULL);")
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS ingredients(
+            ingredient_id INTEGER PRIMARY KEY,
+            ingredient_name TEXT UNIQUE NOT NULL
+        );
+    """)
 
-    conn.execute("CREATE TABLE IF NOT EXISTS measures("
-                "measure_id INT PRIMARY KEY,"
-                "measure_name TEXT UNIQUE);")
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS measures(
+            measure_id INTEGER PRIMARY KEY,
+            measure_name TEXT UNIQUE
+        );
+    """)
 
-    for table, values in data.items():
-        column = table[:-1] + "_name"  # meals → meal_name
-        conn.executemany(
-            f"INSERT INTO {table} ({column}) VALUES (?);",
-            [(v,) for v in values]
-        )
-    conn.commit()
+    # Check if meals table already has data
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM meals;")
+    if cur.fetchone()[0] == 0:
+        # Only insert if empty
+        for table, values in data.items():
+            column = table[:-1] + "_name"
+            conn.executemany(
+                f"INSERT INTO {table} ({column}) VALUES (?);",
+                [(v,) for v in values]
+            )
+        conn.commit()
+
 
 def add_recipe(conn, name, description):
     conn.execute("""
